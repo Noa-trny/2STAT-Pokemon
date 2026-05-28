@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -c \"import nbformat; from nbconvert.preprocessors import ExecutePreprocessor; nb = nbformat.read\\('Pokemons_Analysis.ipynb', as_version=4\\); ep = ExecutePreprocessor\\(timeout=120, kernel_name='python3'\\); ep.preprocess\\(nb, {'metadata': {'path': '.'}}\\); nbformat.write\\(nb, 'Pokemons_Analysis.ipynb'\\); print\\('OK'\\)\")"
+      "Bash(python -c \"import nbformat; from nbconvert.preprocessors import ExecutePreprocessor; nb = nbformat.read\\('Pokemons_Analysis.ipynb', as_version=4\\); ep = ExecutePreprocessor\\(timeout=120, kernel_name='python3'\\); ep.preprocess\\(nb, {'metadata': {'path': '.'}}\\); nbformat.write\\(nb, 'Pokemons_Analysis.ipynb'\\); print\\('OK'\\)\")",
+      "PowerShell(& \"c:/Users/Noato/AppData/Local/Programs/Python/Python313/python.exe\" -c \"import pandas; import numpy; import matplotlib; import seaborn; import plotly; import ipykernel; print\\('OK - tous les packages sont installés'\\)\")",
+      "PowerShell(& \"c:/Users/Noato/AppData/Local/Programs/Python/Python313/python.exe\" -m pip install nbconvert nbclient jupyter --user 2>&1 | Select-Object -Last 5)",
+      "PowerShell(& \"c:/Users/Noato/AppData/Local/Programs/Python/Python313/python.exe\" -m jupyter nbconvert --to notebook --execute \"C:\\\\Users\\\\Noato\\\\OneDrive\\\\Documents\\\\GitHub\\\\2STAT-Pokemon\\\\Pokemons_Analysis.ipynb\" --inplace --ExecutePreprocessor.timeout=120 2>&1 | Select-Object -Last 30)",
+      "PowerShell(& \"c:/Users/Noato/AppData/Local/Programs/Python/Python313/python.exe\" -m nbconvert --to notebook --execute \"C:\\\\Users\\\\Noato\\\\OneDrive\\\\Documents\\\\GitHub\\\\2STAT-Pokemon\\\\Pokemons_Analysis.ipynb\" --inplace --ExecutePreprocessor.timeout=180 2>&1 | Select-Object -Last 50)",
+      "Bash(python generate_notebook.py)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   }
 }
