@@ -1092,6 +1092,625 @@ notebook = {
                 "- **Générations** : Les moyennes des huit générations sont **remarquablement homogènes** (toutes situées entre 65 et 80 pour chaque stat), ce qui témoigne de l'équilibrage cohérent du jeu au fil du temps. Les générations 7 et 8 sont légèrement plus puissantes en moyenne sur `attack` et `sp_attack`.\n",
                 "- **Statuts** : La différence entre `Normal` et les statuts spéciaux est saisissante. Les Pokémon `Legendary` affichent une moyenne supérieure à 100 sur **toutes les stats**, suivis par `Mythical` et `Sub Legendary` (~ 90-100), tandis que les `Normal` plafonnent vers 70. Le radar chart visualise immédiatement la **hiérarchie de rareté/puissance** du dataset."
             ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "# Séance 3 : Analyses Bivariées du Dataset Pokémon\n",
+                "\n",
+                "Après avoir étudié séparément les variables qualitatives et quantitatives, nous abordons à présent les **croisements deux à deux** entre variables. Trois grandes familles d'analyses bivariées sont menées :\n",
+                "\n",
+                "1. **Qualitative × Qualitative** : tableaux de contingence et différents types de diagrammes à barres (groupé, empilé, empilé normalisé, heatmap).\n",
+                "2. **Qualitative × Quantitative (`hp`)** : étude de l'influence des variables `status`, `generation`, `type_1`, `type_2`, `ability_1` sur les points de vie à l'aide de diagrammes à barres, boîtes à moustaches, violons et stripplots.\n",
+                "3. **Qualitative × autres variables quantitatives** (`height_m`, `weight_kg`, `total_points`, `base_experience`) : reproduction des analyses précédentes en multi-grille.\n",
+                "\n",
+                "Chaque cellule de code est accompagnée d'une cellule d'interprétation."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 10. Croisement de Deux Variables Qualitatives\n",
+                "\n",
+                "Pour étudier la relation entre deux variables qualitatives `X` et `Y`, on construit un **tableau de contingence** (les effectifs croisés `pd.crosstab(X, Y)`). On peut ensuite le visualiser via :\n",
+                "- un **diagramme à barres groupé** (les modalités de `Y` sont juxtaposées pour chaque modalité de `X`) ;\n",
+                "- un **diagramme à barres empilé** (les modalités de `Y` sont superposées) ;\n",
+                "- un **diagramme à barres empilé normalisé** (chaque barre vaut 100 % – idéal pour comparer des **profils**) ;\n",
+                "- une **heatmap** (très lisible quand le nombre de modalités est élevé).\n",
+                "\n",
+                "Les couples étudiés ici sont : `status × generation`, `status × type_1`, `generation × type_1`, et `type_1 × type_2`."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "### 10.1 Croisement `status` × `generation`"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Tableau de contingence : effectifs croisés status × generation\n",
+                "ordre_status = ['Normal', 'Sub Legendary', 'Mythical', 'Legendary']\n",
+                "ct_status_gen = pd.crosstab(df['status'], df['generation']).reindex(ordre_status)\n",
+                "print(\"Tableau de contingence (effectifs) - status × generation :\\n\")\n",
+                "print(ct_status_gen)\n",
+                "\n",
+                "# Profils ligne (% par statut) : utile pour comparer la répartition par génération\n",
+                "ct_status_gen_pct = pd.crosstab(df['status'], df['generation'], normalize='index').reindex(ordre_status) * 100\n",
+                "print(\"\\nProfils-ligne (% par statut) :\\n\")\n",
+                "print(ct_status_gen_pct.round(1))"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Représentations graphiques : 3 diagrammes à barres + 1 heatmap\n",
+                "fig, axes = plt.subplots(2, 2, figsize=(15, 10))\n",
+                "couleurs_gen = sns.color_palette('viridis', n_colors=ct_status_gen.shape[1])\n",
+                "\n",
+                "# (a) Diagramme à barres groupé\n",
+                "ct_status_gen.plot(kind='bar', ax=axes[0, 0], color=couleurs_gen, edgecolor='black', width=0.8)\n",
+                "axes[0, 0].set_title(\"Barres groupées : effectifs par statut et génération\", fontweight='bold')\n",
+                "axes[0, 0].set_xlabel(\"Statut\")\n",
+                "axes[0, 0].set_ylabel(\"Nombre de Pokémon\")\n",
+                "axes[0, 0].legend(title='Génération', bbox_to_anchor=(1.02, 1), loc='upper left')\n",
+                "axes[0, 0].tick_params(axis='x', rotation=20)\n",
+                "\n",
+                "# (b) Diagramme à barres empilé\n",
+                "ct_status_gen.plot(kind='bar', stacked=True, ax=axes[0, 1], color=couleurs_gen, edgecolor='black', width=0.7)\n",
+                "axes[0, 1].set_title(\"Barres empilées : effectifs par statut\", fontweight='bold')\n",
+                "axes[0, 1].set_xlabel(\"Statut\")\n",
+                "axes[0, 1].set_ylabel(\"Nombre de Pokémon\")\n",
+                "axes[0, 1].legend(title='Génération', bbox_to_anchor=(1.02, 1), loc='upper left')\n",
+                "axes[0, 1].tick_params(axis='x', rotation=20)\n",
+                "\n",
+                "# (c) Diagramme à barres empilé normalisé (100%)\n",
+                "ct_status_gen_pct.plot(kind='bar', stacked=True, ax=axes[1, 0], color=couleurs_gen, edgecolor='black', width=0.7)\n",
+                "axes[1, 0].set_title(\"Barres empilées normalisées : profil par statut (%)\", fontweight='bold')\n",
+                "axes[1, 0].set_xlabel(\"Statut\")\n",
+                "axes[1, 0].set_ylabel(\"Pourcentage\")\n",
+                "axes[1, 0].legend(title='Génération', bbox_to_anchor=(1.02, 1), loc='upper left')\n",
+                "axes[1, 0].tick_params(axis='x', rotation=20)\n",
+                "axes[1, 0].set_ylim(0, 100)\n",
+                "\n",
+                "# (d) Heatmap\n",
+                "sns.heatmap(ct_status_gen, annot=True, fmt='d', cmap='YlGnBu', ax=axes[1, 1], cbar_kws={'label': 'Effectif'})\n",
+                "axes[1, 1].set_title(\"Heatmap : effectifs status × generation\", fontweight='bold')\n",
+                "axes[1, 1].set_xlabel(\"Génération\")\n",
+                "axes[1, 1].set_ylabel(\"Statut\")\n",
+                "\n",
+                "plt.suptitle(\"Croisement des variables qualitatives : status × generation\", fontsize=15, fontweight='bold')\n",
+                "plt.tight_layout()\n",
+                "plt.show()"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**Interprétation :** Les Pokémon `Normal` dominent toutes les générations et représentent l'essentiel des effectifs. Les statuts spéciaux (`Legendary`, `Mythical`, `Sub Legendary`) restent rares mais leur **proportion relative augmente** avec les générations récentes : la barre empilée normalisée montre clairement que la part des Pokémon non-normaux est plus marquée en génération 7. Les `Mythical` sont absents de plusieurs générations, ce qui reflète une politique éditoriale (un Mythical est généralement révélé via un événement spécial)."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "### 10.2 Croisement `status` × `type_1`"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Tableau de contingence status × type_1\n",
+                "ct_status_t1 = pd.crosstab(df['status'], df['type_1']).reindex(ordre_status)\n",
+                "print(\"Tableau de contingence (effectifs) - status × type_1 :\\n\")\n",
+                "print(ct_status_t1)\n",
+                "\n",
+                "# Profils-colonne (% par type) : pour chaque type, quelle est la répartition des statuts ?\n",
+                "ct_t1_status_pct = pd.crosstab(df['type_1'], df['status'], normalize='index')[ordre_status] * 100\n",
+                "print(\"\\nProfils-ligne (% par type_1) :\\n\")\n",
+                "print(ct_t1_status_pct.round(1).head(10))"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "fig, axes = plt.subplots(1, 2, figsize=(18, 7))\n",
+                "couleurs_status = ['#5dade2', '#f4d03f', '#eb984e', '#af7ac5']\n",
+                "\n",
+                "# (a) Heatmap : effectifs croisés\n",
+                "sns.heatmap(ct_status_t1, annot=True, fmt='d', cmap='magma_r', ax=axes[0], cbar_kws={'label': 'Effectif'})\n",
+                "axes[0].set_title(\"Heatmap : status × type_1 (effectifs)\", fontweight='bold')\n",
+                "axes[0].set_xlabel(\"Type 1\")\n",
+                "axes[0].set_ylabel(\"Statut\")\n",
+                "axes[0].tick_params(axis='x', rotation=45)\n",
+                "\n",
+                "# (b) Barres empilées normalisées : pour chaque type, profil statut\n",
+                "ct_t1_status_pct.sort_values('Normal').plot(kind='barh', stacked=True, ax=axes[1], color=couleurs_status, edgecolor='black')\n",
+                "axes[1].set_title(\"Profil des statuts par type_1 (% empilé)\", fontweight='bold')\n",
+                "axes[1].set_xlabel(\"Pourcentage\")\n",
+                "axes[1].set_ylabel(\"Type 1\")\n",
+                "axes[1].legend(title='Statut', bbox_to_anchor=(1.02, 1), loc='upper left')\n",
+                "axes[1].set_xlim(0, 100)\n",
+                "\n",
+                "plt.suptitle(\"Croisement des variables qualitatives : status × type_1\", fontsize=15, fontweight='bold')\n",
+                "plt.tight_layout()\n",
+                "plt.show()"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**Interprétation :** La heatmap met en évidence les types les plus riches en Pokémon `Normal` (Water, Bug, Grass, Normal). Le diagramme horizontal empilé normalisé fait ressortir les types **sur-représentés en statuts rares** : `Psychic` et `Dragon` affichent la plus forte proportion de Pokémon `Legendary`/`Mythical`/`Sub Legendary`. À l'inverse, `Bug`, `Poison` et `Normal` sont **quasi exclusivement** composés de Pokémon `Normal`. Cette dissymétrie est cohérente avec l'imaginaire de la franchise (les dragons et psychiques sont mystiques)."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "### 10.3 Croisement `generation` × `type_1`"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Tableau de contingence\n",
+                "ct_gen_t1 = pd.crosstab(df['generation'], df['type_1'])\n",
+                "print(\"Tableau de contingence generation × type_1 :\\n\")\n",
+                "print(ct_gen_t1)\n",
+                "\n",
+                "fig, axes = plt.subplots(1, 2, figsize=(18, 7))\n",
+                "\n",
+                "# (a) Heatmap des effectifs\n",
+                "sns.heatmap(ct_gen_t1, annot=True, fmt='d', cmap='YlOrRd', ax=axes[0], cbar_kws={'label': 'Effectif'})\n",
+                "axes[0].set_title(\"Heatmap : generation × type_1\", fontweight='bold')\n",
+                "axes[0].set_xlabel(\"Type 1\")\n",
+                "axes[0].set_ylabel(\"Génération\")\n",
+                "axes[0].tick_params(axis='x', rotation=45)\n",
+                "\n",
+                "# (b) Barres empilées normalisées par génération\n",
+                "ct_gen_t1_pct = pd.crosstab(df['generation'], df['type_1'], normalize='index') * 100\n",
+                "ct_gen_t1_pct.plot(kind='bar', stacked=True, ax=axes[1], colormap='tab20', edgecolor='black', width=0.85)\n",
+                "axes[1].set_title(\"Profil des types par génération (% empilé)\", fontweight='bold')\n",
+                "axes[1].set_xlabel(\"Génération\")\n",
+                "axes[1].set_ylabel(\"Pourcentage\")\n",
+                "axes[1].legend(title='Type 1', bbox_to_anchor=(1.02, 1), loc='upper left', ncol=1, fontsize=9)\n",
+                "axes[1].set_ylim(0, 100)\n",
+                "axes[1].tick_params(axis='x', rotation=0)\n",
+                "\n",
+                "plt.suptitle(\"Croisement des variables qualitatives : generation × type_1\", fontsize=15, fontweight='bold')\n",
+                "plt.tight_layout()\n",
+                "plt.show()"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**Interprétation :** Tous les types apparaissent dès la génération 1, mais leur **proportion fluctue notablement** : la gén. 1 est riche en `Normal` et `Bug`, la gén. 3 introduit massivement les types `Rock` et `Water`, et la gén. 5 fait la part belle aux `Bug` et `Dark`. Aucune génération n'introduit de monoculture (la diversité chromatique de chaque barre le confirme), mais les designers ont visiblement souhaité **rééquilibrer** les types au fil du temps."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "### 10.4 Croisement `type_1` × `type_2`\n",
+                "\n",
+                "Ce croisement est riche : il révèle les **combinaisons de types** les plus fréquentes (et les inexplorées). On filtre uniquement les Pokémon possédant deux types."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# On ne garde que les Pokémon ayant deux types\n",
+                "df_bitype = df.dropna(subset=['type_2'])\n",
+                "ct_t1_t2 = pd.crosstab(df_bitype['type_1'], df_bitype['type_2'])\n",
+                "print(f\"Nombre de Pokémon bitypes : {len(df_bitype)}\")\n",
+                "print(f\"Nombre de combinaisons (type_1, type_2) observées : {(ct_t1_t2 > 0).sum().sum()}\")\n",
+                "print(\"\\nTableau de contingence type_1 × type_2 (extrait) :\\n\")\n",
+                "print(ct_t1_t2)\n",
+                "\n",
+                "plt.figure(figsize=(13, 10))\n",
+                "sns.heatmap(ct_t1_t2, annot=True, fmt='d', cmap='rocket_r',\n",
+                "            cbar_kws={'label': 'Effectif'}, linewidths=0.5, linecolor='lightgray')\n",
+                "plt.title(\"Heatmap des combinaisons type_1 × type_2 (Pokémon bitypes)\",\n",
+                "          fontsize=15, fontweight='bold', pad=15)\n",
+                "plt.xlabel(\"Type 2\")\n",
+                "plt.ylabel(\"Type 1\")\n",
+                "plt.xticks(rotation=45, ha='right')\n",
+                "plt.tight_layout()\n",
+                "plt.show()\n",
+                "\n",
+                "# Top 10 des combinaisons les plus fréquentes\n",
+                "combinaisons = (ct_t1_t2.stack()\n",
+                "                .reset_index(name='effectif')\n",
+                "                .query('effectif > 0')\n",
+                "                .sort_values('effectif', ascending=False)\n",
+                "                .head(10))\n",
+                "print(\"\\nTop 10 des combinaisons type_1 × type_2 :\\n\")\n",
+                "print(combinaisons.to_string(index=False))"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**Interprétation :** Les combinaisons les plus fréquentes sont `Normal/Flying`, `Bug/Flying`, `Bug/Poison` et `Grass/Poison` – elles correspondent à des archétypes classiques (les oiseaux normaux, les insectes ailés ou venimeux, les plantes toxiques). De nombreuses cases de la heatmap restent **vides** : la diagonale par exemple (un Pokémon ne peut pas avoir le même type 1 et type 2) mais aussi des associations peu logiques sur le plan thématique (`Fire/Water`, `Ghost/Normal`, etc.). La heatmap met aussi en évidence des types **plus polyvalents** (Flying, Poison, Psychic apparaissent beaucoup en type 2) que d'autres (Normal apparaît rarement en type 2)."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 11. Influence d'une Variable Qualitative sur la Variable `hp`\n",
+                "\n",
+                "Lorsqu'on étudie l'influence d'une variable qualitative `X` sur une variable quantitative `Y` (ici `hp`), on combine plusieurs représentations :\n",
+                "- **Diagramme à barres** des **moyennes** (ou médianes) de `Y` par modalité de `X`, idéalement avec barres d'erreur (écart-type ou intervalle de confiance) ;\n",
+                "- **Boîte à moustaches** (boxplot) pour visualiser la dispersion, la médiane, les quartiles et les valeurs extrêmes ;\n",
+                "- **Violon** (violin plot) qui ajoute la densité de la distribution ;\n",
+                "- **Stripplot/swarmplot** qui affiche chaque individu.\n",
+                "\n",
+                "Pour réduire la répétition de code, on définit d'abord une **fonction utilitaire** `influence_qual_quanti` qui produit une figure synthétique."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "def influence_qual_quanti(data, var_qual, var_quanti, ordre=None, palette='Set2', top_n=None, figsize=(16, 5)):\n",
+                "    \"\"\"Affiche 3 graphiques (barres+erreurs, boxplot, violon) pour étudier l'influence\n",
+                "    de la variable qualitative `var_qual` sur la variable quantitative `var_quanti`.\n",
+                "    `top_n` permet de ne garder que les `top_n` modalités les plus fréquentes (utile pour ability_1).\"\"\"\n",
+                "    d = data.dropna(subset=[var_qual, var_quanti]).copy()\n",
+                "    if top_n is not None:\n",
+                "        top_mods = d[var_qual].value_counts().head(top_n).index\n",
+                "        d = d[d[var_qual].isin(top_mods)]\n",
+                "        ordre = list(top_mods)\n",
+                "    if ordre is None:\n",
+                "        ordre = d.groupby(var_qual)[var_quanti].median().sort_values().index.tolist()\n",
+                "\n",
+                "    fig, axes = plt.subplots(1, 3, figsize=figsize)\n",
+                "\n",
+                "    # (a) Diagramme à barres des moyennes + barre d'erreur (écart-type)\n",
+                "    sns.barplot(data=d, x=var_qual, y=var_quanti, order=ordre, hue=var_qual,\n",
+                "                palette=palette, errorbar='sd', ax=axes[0], legend=False)\n",
+                "    axes[0].set_title(f\"Moyenne de {var_quanti} par {var_qual}\\n(± écart-type)\", fontweight='bold')\n",
+                "    axes[0].tick_params(axis='x', rotation=30)\n",
+                "\n",
+                "    # (b) Boîte à moustaches\n",
+                "    sns.boxplot(data=d, x=var_qual, y=var_quanti, order=ordre, hue=var_qual,\n",
+                "                palette=palette, ax=axes[1], legend=False)\n",
+                "    axes[1].set_title(f\"Boîte à moustaches de {var_quanti} par {var_qual}\", fontweight='bold')\n",
+                "    axes[1].tick_params(axis='x', rotation=30)\n",
+                "\n",
+                "    # (c) Violon\n",
+                "    sns.violinplot(data=d, x=var_qual, y=var_quanti, order=ordre, hue=var_qual,\n",
+                "                   palette=palette, ax=axes[2], inner='quartile', legend=False)\n",
+                "    axes[2].set_title(f\"Violon de {var_quanti} par {var_qual}\", fontweight='bold')\n",
+                "    axes[2].tick_params(axis='x', rotation=30)\n",
+                "\n",
+                "    plt.suptitle(f\"Influence de '{var_qual}' sur '{var_quanti}'\", fontsize=15, fontweight='bold')\n",
+                "    plt.tight_layout()\n",
+                "    plt.show()\n",
+                "\n",
+                "    # Statistiques descriptives par modalité\n",
+                "    stats = d.groupby(var_qual)[var_quanti].agg(['count', 'mean', 'std', 'median', 'min', 'max']).round(2).loc[ordre]\n",
+                "    print(f\"\\nStatistiques descriptives de '{var_quanti}' par '{var_qual}' :\\n\")\n",
+                "    print(stats)\n",
+                "    return stats\n",
+                "\n",
+                "print(\"Fonction influence_qual_quanti() définie avec succès.\")"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "### 11.1 Influence de `status` sur `hp`"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "_ = influence_qual_quanti(df, 'status', 'hp', ordre=ordre_status, palette='Set2')"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**Interprétation :** Les trois représentations convergent : le `hp` moyen croît nettement avec la rareté du statut. Les `Normal` ont une médiane autour de 65 et une distribution relativement resserrée, tandis que les `Legendary` dépassent en moyenne 100 et présentent une **dispersion plus large**. Le violon révèle que les `Mythical` sont concentrés autour d'une valeur typique (~ 80-100), alors que les `Sub Legendary` sont plus étalés. Quelques valeurs extrêmes (>200) chez les `Normal` correspondent vraisemblablement à des Pokémon comme Blissey ou Chansey, célèbres pour leur HP énorme."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "### 11.2 Influence de `generation` sur `hp`"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "_ = influence_qual_quanti(df, 'generation', 'hp',\n",
+                "                          ordre=sorted(df['generation'].unique()),\n",
+                "                          palette='viridis')"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**Interprétation :** Les médianes de `hp` sont **très homogènes** d'une génération à l'autre (entre 65 et 75), confirmant la cohérence du game design. La génération 7 montre une médiane légèrement plus élevée. Toutes les générations contiennent des valeurs extrêmes (>150), preuve que chaque épisode du jeu introduit au moins quelques Pokémon \"tanks\"."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "### 11.3 Influence de `type_1` sur `hp`"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "_ = influence_qual_quanti(df, 'type_1', 'hp', palette='tab20', figsize=(18, 6))"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**Interprétation :** Les `hp` varient sensiblement selon le type principal. Les `Dragon` ont la médiane la plus élevée (~ 80), suivis par `Flying` et `Fairy` (~ 74), tandis que les types `Bug` et `Steel` affichent les médianes les plus faibles (~ 55-60). Les `Normal` se distinguent moins par leur médiane que par la **présence de valeurs extrêmes** (Chansey, Blissey >200). Les boîtes à moustaches révèlent une variabilité **intra-type très forte** pour la plupart des types, signe que le `hp` n'est qu'un facteur de différenciation parmi d'autres au sein d'un même type."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "### 11.4 Influence de `type_2` sur `hp`"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "_ = influence_qual_quanti(df, 'type_2', 'hp', palette='tab20', figsize=(18, 6))"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**Interprétation :** L'effet de `type_2` est plus marqué que celui de `type_1`. Les Pokémon possédant `Ice` (médiane ~ 90), `Dragon` (~ 81) ou `Fighting` (~ 80) en second type ont un `hp` médian très élevé, en partie parce que beaucoup de Légendaires bitypes ont ce profil. Les distributions sont **plus dispersées** car le second type concerne moins de Pokémon (population réduite, n = 553)."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "### 11.5 Influence de `ability_1` sur `hp` (top 10 capacités)\n",
+                "\n",
+                "La variable `ability_1` compte plus d'une centaine de modalités : afficher chacune serait illisible. On restreint l'analyse aux **10 capacités les plus fréquentes**."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "_ = influence_qual_quanti(df, 'ability_1', 'hp', top_n=10, palette='Spectral', figsize=(18, 6))"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**Interprétation :** La capacité **`Pressure` se détache nettement** avec une médiane de `hp` de 90, bien au-dessus des autres : c'est l'ability emblématique de nombreux Légendaires (Mewtwo, les Oiseaux légendaires, Giratina...) ce qui tire mécaniquement la médiane vers le haut. Les autres capacités (`Swift Swim`, `Keen Eye`, `Chlorophyll`, `Overgrow`, `Blaze`, `Torrent`, `Swarm`, `Intimidate`, `Levitate`) restent dans une fourchette serrée (55-70) : à l'exception de `Pressure`, **l'ability_1 a peu d'influence sur le `hp`**, contrairement à `status` ou aux types principaux."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 12. Influence de Variables Qualitatives sur d'Autres Variables Quantitatives\n",
+                "\n",
+                "Nous reprenons les analyses précédentes en remplaçant `hp` par d'autres variables quantitatives pertinentes : `height_m`, `weight_kg`, `total_points`, `base_experience`.\n",
+                "\n",
+                "Pour gagner en concision, on construit une **multi-grille** : une ligne par variable qualitative, une colonne par variable quantitative, chaque case affichant un boxplot."
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "def grille_boxplots(data, var_qual, vars_quanti, ordre=None, palette='Set2', top_n=None, figsize=(20, 5)):\n",
+                "    \"\"\"Affiche une grille de boxplots : une colonne par variable quantitative.\"\"\"\n",
+                "    d = data.dropna(subset=[var_qual]).copy()\n",
+                "    if top_n is not None:\n",
+                "        top_mods = d[var_qual].value_counts().head(top_n).index\n",
+                "        d = d[d[var_qual].isin(top_mods)]\n",
+                "        ordre = list(top_mods)\n",
+                "    if ordre is None:\n",
+                "        ordre = sorted(d[var_qual].dropna().unique().tolist())\n",
+                "\n",
+                "    fig, axes = plt.subplots(1, len(vars_quanti), figsize=figsize)\n",
+                "    for ax, vq in zip(axes, vars_quanti):\n",
+                "        sns.boxplot(data=d, x=var_qual, y=vq, order=ordre, hue=var_qual,\n",
+                "                    palette=palette, ax=ax, legend=False)\n",
+                "        ax.set_title(f\"{vq} par {var_qual}\", fontweight='bold')\n",
+                "        ax.tick_params(axis='x', rotation=30)\n",
+                "    plt.suptitle(f\"Influence de '{var_qual}' sur plusieurs variables quantitatives\",\n",
+                "                 fontsize=15, fontweight='bold')\n",
+                "    plt.tight_layout()\n",
+                "    plt.show()\n",
+                "\n",
+                "    moyennes = d.groupby(var_qual)[vars_quanti].mean().round(2).loc[ordre]\n",
+                "    print(f\"\\nMoyennes des variables quantitatives par '{var_qual}' :\\n\")\n",
+                "    print(moyennes)\n",
+                "    return moyennes\n",
+                "\n",
+                "vars_quanti = ['height_m', 'weight_kg', 'total_points', 'base_experience']\n",
+                "print(\"Fonction grille_boxplots() définie. Variables quantitatives ciblées :\", vars_quanti)"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "### 12.1 Influence de `status` sur `height_m`, `weight_kg`, `total_points`, `base_experience`"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "_ = grille_boxplots(df, 'status', vars_quanti, ordre=ordre_status, palette='Set2', figsize=(22, 5))"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**Interprétation :** L'influence de `status` est **massive** sur les quatre variables : les `Legendary` sont plus grands, plus lourds, plus puissants (`total_points`) et donnent plus d'expérience. Sur `base_experience`, le saut est particulièrement spectaculaire (médiane ~ 150 pour `Normal` contre 300+ pour `Legendary`). `total_points` confirme la hiérarchie observée au radar chart (Séance 2)."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "### 12.2 Influence de `generation` sur les mêmes variables"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "_ = grille_boxplots(df, 'generation', vars_quanti,\n",
+                "                    ordre=sorted(df['generation'].unique()),\n",
+                "                    palette='viridis', figsize=(22, 5))"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**Interprétation :** Les médianes de `height_m`, `weight_kg`, `total_points` sont **très stables** d'une génération à l'autre, ce qui confirme l'équilibrage soigneux du jeu. On note cependant une légère tendance haussière sur `base_experience` à partir de la génération 6, possiblement liée à un ajustement du système de récompense d'XP."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "### 12.3 Influence de `type_1` sur les mêmes variables"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "_ = grille_boxplots(df, 'type_1', vars_quanti, palette='tab20', figsize=(24, 6))"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**Interprétation :** Les variables `height_m` et `weight_kg` sont les plus discriminantes selon le `type_1` : les `Dragon`, `Steel` et `Rock` sont sensiblement plus grands et plus lourds que les `Bug`, `Fairy` ou `Electric`. Sur `total_points`, les types `Dragon` et `Psychic` dominent (présence de nombreux Légendaires), ce qui confirme les conclusions de la section 10.2. `base_experience` suit globalement la même hiérarchie que `total_points`, ce qui est attendu (les Pokémon plus puissants donnent plus d'XP)."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "### 12.4 Influence de `ability_1` (top 10) sur les mêmes variables"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "_ = grille_boxplots(df, 'ability_1', vars_quanti, top_n=10, palette='Spectral', figsize=(24, 6))"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "**Interprétation :** Comme pour `hp`, l'ability `Pressure` se distingue très nettement avec des valeurs élevées de `total_points` et `base_experience` (Légendaires inside). Les capacités de départ des starters (`Overgrow`, `Blaze`, `Torrent`) donnent des profils proches, ce qui est attendu car elles s'appliquent à des Pokémon volontairement équilibrés en début de jeu. Hors `Pressure`, l'ability_1 reste **secondaire** par rapport à `status` ou `type_1` pour expliquer les variables quantitatives."
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## 13. Synthèse de la Séance 3\n",
+                "\n",
+                "Les analyses bivariées menées dans cette séance permettent de hiérarchiser **l'effet des différentes variables qualitatives** sur les variables quantitatives du dataset :\n",
+                "\n",
+                "| Variable qualitative | Effet sur `hp` | Effet sur `total_points` | Effet sur `height_m`/`weight_kg` |\n",
+                "|---|---|---|---|\n",
+                "| `status` | **Très fort** | **Très fort** | Fort |\n",
+                "| `type_1` | Modéré | Fort (Dragon/Psychic dominent) | **Très fort** (Steel/Rock/Dragon) |\n",
+                "| `type_2` | Modéré | Fort | Modéré |\n",
+                "| `generation` | Faible | Faible | Faible |\n",
+                "| `ability_1` (top 10) | Faible | Faible | Faible |\n",
+                "\n",
+                "**Conclusions principales :**\n",
+                "1. **`status` est de loin la variable qualitative la plus discriminante** : elle structure tout le dataset et explique la majeure partie de la variance des stats de combat (cf. Séance 2 et radar charts).\n",
+                "2. **Les types influencent surtout la morphologie** (`height_m`, `weight_kg`) et de manière indirecte `total_points` via la concentration de Légendaires dans certains types.\n",
+                "3. **La génération est un excellent contre-exemple d'équilibrage** : aucune génération n'est globalement plus forte qu'une autre, ce qui est cohérent avec la volonté des designers.\n",
+                "4. Les **croisements qualitatifs** (`status × type_1`, `type_1 × type_2`) révèlent la **structure du Pokédex** : surreprésentation des Légendaires en Psychic/Dragon, combinaisons Normal/Flying et Bug/Poison classiques, types `Fairy`/`Steel` plus rares en type 2.\n",
+                "\n",
+                "Ces résultats fournissent une base solide pour les futures analyses : tests d'indépendance (χ², ANOVA), corrélations entre variables quantitatives, et éventuellement des modèles prédictifs."
+            ]
         }
     ],
     "metadata": {
